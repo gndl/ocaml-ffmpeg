@@ -9,6 +9,7 @@ addons:
     - libavutil-dev
     - libavformat-dev
     - libavcodec-dev
+    - libavdevice-dev
     - libswscale-dev
     - libswresample-dev
 
