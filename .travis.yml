@@ -1,16 +1,20 @@
 language: c
 dist: trusty
-sudo: false
+sudo: true
+before_install:
+  - sudo add-apt-repository ppa:mc3man/trusty-media
+  - sudo apt-get update -q
+  - sudo apt-get install ffmpeg -y
 addons:
   apt:
     packages:
     - ocaml-nox
     - ocaml-findlib
-    - libavutil-dev3.3
-    - libavformat-dev3.3
-    - libavcodec-dev3.3
-    - libavdevice-dev3.3
-    - libswscale-dev3.3
-    - libswresample-dev3.3
+    - libavutil-dev
+    - libavformat-dev
+    - libavcodec-dev
+    - libavdevice-dev
+    - libswscale-dev
+    - libswresample-dev
 
 script: ./bootstrap && ./configure && make
