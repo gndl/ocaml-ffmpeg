@@ -15,6 +15,5 @@ addons:
     - libavcodec-dev
     - libavdevice-dev
     - libswscale-dev
-    - libswresample-dev
 
 script: ./bootstrap && ./configure && make
