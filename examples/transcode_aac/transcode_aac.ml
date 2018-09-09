@@ -13,9 +13,7 @@ let () =
   let os = Av.open_output Sys.argv.(2)
            |> Av.new_audio_stream ~codec_id:`Aac ~codec in
 
-  is |> Av.iter_frame(fun frm -> Av.write_frame os frm);
+  is |> Av.iter_frame @@ Av.write_frame os;
 
-  Av.get_input is |> Av.close;
-  Av.get_output os |> Av.close;
-
+  
   Gc.full_major (); Gc.full_major ()

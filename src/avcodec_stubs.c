@@ -199,7 +199,7 @@ static struct custom_operations parser_ops =
 
 static parser_t * avcodec_create_parser(enum AVCodecID codec_id)
 {
-  if( ! register_lock_manager()) return NULL;
+  if( ! ocaml_ffmpeg_register_lock_manager()) return NULL;
 
   avcodec_register_all();
 
@@ -340,7 +340,7 @@ static struct custom_operations codec_context_ops =
 
 static codec_context_t * avcodec_create_codec_context(enum AVCodecID codec_id, int decoder)
 {
-  if( ! register_lock_manager()) return NULL;
+  if( ! ocaml_ffmpeg_register_lock_manager()) return NULL;
 
   avcodec_register_all();
 
@@ -647,7 +647,7 @@ CAMLprim value ocaml_avcodec_flush_encoder(value _ctx) {
 
 static enum AVCodecID find_codec_id(const char *name)
 {
-  if( ! register_lock_manager()) Raise(EXN_FAILURE, ocaml_av_error_msg);
+  if( ! ocaml_ffmpeg_register_lock_manager()) Raise(EXN_FAILURE, ocaml_av_error_msg);
 
   avcodec_register_all();
 
@@ -684,7 +684,7 @@ CAMLprim value ocaml_avcodec_get_supported_channel_layouts(value _codec_id)
   int i;
   List_init(list);
 
-  if( ! register_lock_manager()) Raise(EXN_FAILURE, ocaml_av_error_msg);
+  if( ! ocaml_ffmpeg_register_lock_manager()) Raise(EXN_FAILURE, ocaml_av_error_msg);
 
   avcodec_register_all();
 
@@ -705,7 +705,7 @@ CAMLprim value ocaml_avcodec_get_supported_sample_formats(value _codec_id)
   int i;
   List_init(list);
 
-  if( ! register_lock_manager()) Raise(EXN_FAILURE, ocaml_av_error_msg);
+  if( ! ocaml_ffmpeg_register_lock_manager()) Raise(EXN_FAILURE, ocaml_av_error_msg);
 
   avcodec_register_all();
 
@@ -726,7 +726,7 @@ CAMLprim value ocaml_avcodec_get_supported_sample_rates(value _codec_id)
   int i;
   List_init(list);
 
-  if( ! register_lock_manager()) Raise(EXN_FAILURE, ocaml_av_error_msg);
+  if( ! ocaml_ffmpeg_register_lock_manager()) Raise(EXN_FAILURE, ocaml_av_error_msg);
 
   avcodec_register_all();
 
@@ -812,7 +812,7 @@ CAMLprim value ocaml_avcodec_get_supported_frame_rates(value _codec_id)
   int i;
   List_init(list);
 
-  if( ! register_lock_manager()) Raise(EXN_FAILURE, ocaml_av_error_msg);
+  if( ! ocaml_ffmpeg_register_lock_manager()) Raise(EXN_FAILURE, ocaml_av_error_msg);
 
   avcodec_register_all();
 
@@ -835,7 +835,7 @@ CAMLprim value ocaml_avcodec_get_supported_pixel_formats(value _codec_id)
   int i;
   List_init(list);
 
-  if( ! register_lock_manager()) Raise(EXN_FAILURE, ocaml_av_error_msg);
+  if( ! ocaml_ffmpeg_register_lock_manager()) Raise(EXN_FAILURE, ocaml_av_error_msg);
 
   avcodec_register_all();
 

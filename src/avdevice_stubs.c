@@ -18,7 +18,7 @@ static value get_input_devices(AVInputFormat * (*input_device_next)(AVInputForma
   AVInputFormat *fmt = NULL;
   int len = 0;
 
-  if( ! register_lock_manager()) Raise(EXN_FAILURE, ocaml_av_error_msg);
+  if( ! ocaml_ffmpeg_register_lock_manager()) Raise(EXN_FAILURE, ocaml_av_error_msg);
 
   caml_release_runtime_system();
   avdevice_register_all();
@@ -60,7 +60,7 @@ static value get_output_devices(AVOutputFormat * (*output_device_next)(AVOutputF
   AVOutputFormat *fmt = NULL;
   int len = 0;
 
-  if( ! register_lock_manager()) Raise(EXN_FAILURE, ocaml_av_error_msg);
+  if( ! ocaml_ffmpeg_register_lock_manager()) Raise(EXN_FAILURE, ocaml_av_error_msg);
 
   caml_release_runtime_system();
   avdevice_register_all();

@@ -72,7 +72,7 @@ static int lock_manager(void **mtx, enum AVLockOp op)
   return 1;
 }
 
-int register_lock_manager()
+int ocaml_ffmpeg_register_lock_manager()
 {
   static int registering_done = 0;
   static pthread_mutex_t registering_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -102,6 +102,18 @@ void value_of_rational(const AVRational * rational, value * pvalue) {
   *pvalue = caml_alloc_tuple(2);
   Field(*pvalue, 0) = Val_int(rational->num);
   Field(*pvalue, 1) = Val_int(rational->den);
+}
+
+
+/**** Time base ****/
+CAMLprim value ocaml_avutil_time_base()
+{
+  CAMLparam0();
+  CAMLlocal1(ans);
+
+  value_of_rational(&AV_TIME_BASE_Q, &ans);
+
+  CAMLreturn(ans);
 }
 
 
@@ -174,15 +186,20 @@ CAMLprim value ocaml_avutil_clear_log_callback()
   CAMLreturn(Val_unit);
 }
 
-CAMLprim value ocaml_avutil_time_base()
+void ocaml_ffmpeg_suspend_log_callback()
 {
-  CAMLparam0();
-  CAMLlocal1(ans);
-
-  value_of_rational(&AV_TIME_BASE_Q, &ans);
-
-  CAMLreturn(ans);
+  if (ocaml_log_callback != (value)NULL) {
+    av_log_set_callback(&av_log_default_callback);
+  }
 }
+
+void ocaml_ffmpeg_resume_log_callback()
+{
+  if (ocaml_log_callback != (value)NULL) {
+    av_log_set_callback(&av_log_ocaml_callback);
+  }
+}
+
 
 /**** Channel layout ****/
 CAMLprim value ocaml_avutil_get_channel_layout_nb_channels(value _channel_layout)

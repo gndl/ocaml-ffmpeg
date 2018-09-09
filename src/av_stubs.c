@@ -85,6 +85,7 @@ enum AVMediaType MediaType_val(value v)
   return MEDIA_TYPES[Int_val(v)];
 }
 
+static void close_av(av_t * av);
 
 static void free_stream(stream_t * stream)
 {
@@ -119,45 +120,12 @@ static void free_stream(stream_t * stream)
   free(stream);
 }
 
-static void close_av(av_t * av)
-{
-  if( ! av) return;
-
-  if(av->format_context) {
-
-    if(av->streams) {
-      unsigned int i;
-      for(i = 0; i < av->format_context->nb_streams; i++) {
-        if(av->streams[i]) free_stream(av->streams[i]);
-      }
-      free(av->streams);
-      av->streams = NULL;
-    }
-
-    if(av->format_context->iformat) {
-      avformat_close_input(&av->format_context);
-    }
-    else if(av->format_context->oformat) {
-      // Close the output file if needed.
-      if( ! (av->format_context->oformat->flags & AVFMT_NOFILE))
-        avio_closep(&av->format_context->pb);
-
-      avformat_free_context(av->format_context);
-      av->format_context = NULL;
-    }
-
-    av->best_audio_stream = NULL;
-    av->best_video_stream = NULL;
-    av->best_subtitle_stream = NULL;
-  }
-}
-
 static void free_av(av_t * av)
 {
   if( ! av) return;
 
   close_av(av);
-  
+
   if(av->packet_value) caml_remove_generational_global_root(&av->packet_value);
 
   if(av->control_message_callback) {
@@ -169,7 +137,11 @@ static void free_av(av_t * av)
 
 static void finalize_av(value v)
 {
+  ocaml_ffmpeg_suspend_log_callback();
+
   free_av(Av_val(v));
+  
+  ocaml_ffmpeg_resume_log_callback();
 }
 
 static struct custom_operations av_ops = {
@@ -298,7 +270,7 @@ static av_t * open_input(char *url, AVInputFormat *format)
   av->is_input = 1;
   av->release_out = 1;
   
-  if( ! register_lock_manager()) return NULL;
+  if( ! ocaml_ffmpeg_register_lock_manager()) return NULL;
 
   av_register_all();
 
@@ -932,7 +904,7 @@ static av_t * open_output(AVOutputFormat *format, const char *format_name, const
   av_t *av = (av_t*)calloc(1, sizeof(av_t));
   if ( ! av) Fail("Failed to allocate output context");
 
-  if( ! register_lock_manager()) return NULL;
+  if( ! ocaml_ffmpeg_register_lock_manager()) return NULL;
 
   av_register_all();
 
@@ -1638,40 +1610,76 @@ CAMLprim value ocaml_av_write_video_frame(value _av, value _frame) {
 }
 
 
+static void flush_output_streams(av_t * av)
+{
+  // flush encoders of the output file
+  unsigned int i;
+  for(i = 0; i < av->format_context->nb_streams; i++) {
+
+    AVCodecContext * enc_ctx = av->streams[i]->codec_context;
+
+    if( ! enc_ctx) continue;
+  
+    if(enc_ctx->codec_type == AVMEDIA_TYPE_AUDIO) {
+      write_audio_frame(av, i, NULL);
+    }
+    else if(enc_ctx->codec_type == AVMEDIA_TYPE_VIDEO) {
+      write_video_frame(av, i, NULL);
+    }
+  }
+
+  // write the trailer
+  av_write_trailer(av->format_context);
+}
+
+static void close_av(av_t * av)
+{
+  if( ! av) return;
+
+  if(av->format_context) {
+
+    if(av->streams) {
+      unsigned int i;
+      
+      if( ! av->is_input) {
+        flush_output_streams(av);
+      }
+
+      for(i = 0; i < av->format_context->nb_streams; i++) {
+        if(av->streams[i]) free_stream(av->streams[i]);
+      }
+      free(av->streams);
+      av->streams = NULL;
+    }
+
+    if(av->format_context->iformat) {
+      avformat_close_input(&av->format_context);
+    }
+    else if(av->format_context->oformat) {
+      // Close the output file if needed.
+      if( ! (av->format_context->oformat->flags & AVFMT_NOFILE))
+        avio_closep(&av->format_context->pb);
+
+      avformat_free_context(av->format_context);
+      av->format_context = NULL;
+    }
+
+    av->best_audio_stream = NULL;
+    av->best_video_stream = NULL;
+    av->best_subtitle_stream = NULL;
+  }
+}
+
 CAMLprim value ocaml_av_close(value _av)
 {
   CAMLparam1(_av);
   av_t * av = Av_val(_av);
-  stream_t no_stream;
-  stream_t * stream = &no_stream;
   
   caml_release_runtime_system();
 
-  if( ! av->is_input && av->streams) {
-    // flush encoders of the output file
-    unsigned int i;
-    for(i = 0; i < av->format_context->nb_streams && stream; i++) {
-
-      AVCodecContext * enc_ctx = av->streams[i]->codec_context;
-
-      if( ! enc_ctx) continue;
-  
-      if(enc_ctx->codec_type == AVMEDIA_TYPE_AUDIO) {
-        stream = write_audio_frame(av, i, NULL);
-      }
-      else if(enc_ctx->codec_type == AVMEDIA_TYPE_VIDEO) {
-        stream = write_video_frame(av, i, NULL);
-      }
-    }
-
-    // write the trailer
-    av_write_trailer(av->format_context);
-  }
   close_av(av);
 
   caml_acquire_runtime_system();
-
-  if( ! stream) Raise(EXN_FAILURE, ocaml_av_error_msg);
 
   CAMLreturn(Val_unit);
 }

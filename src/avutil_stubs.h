@@ -52,7 +52,7 @@ extern char ocaml_av_exn_msg[];
 
 void ocaml_ffmpeg_register_thread();
 
-int register_lock_manager();
+int ocaml_ffmpeg_register_lock_manager();
 
   
 /**** AVRational ****/
@@ -64,6 +64,13 @@ void value_of_rational(const AVRational * r, value * pv);
 /**** Time format ****/
 
 int64_t second_fractions_of_time_format(value time_format);
+
+
+/**** Logging ****/
+
+void ocaml_ffmpeg_suspend_log_callback();
+
+void ocaml_ffmpeg_resume_log_callback();
 
 
 /**** Channel layout ****/
